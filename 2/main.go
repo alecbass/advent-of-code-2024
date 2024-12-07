@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-const INPUT_NAME = "input.txt"
-
 func isSafe(report []int) bool {
 	if len(report) == 1 {
 		return true
@@ -28,10 +26,6 @@ func isSafe(report []int) bool {
 		}
 
 		// Re-record the ascending/descending status if the second level was dampened
-		if i == 2 {
-			fmt.Println(is_dampened)
-		}
-
 		if is_dampened && i == 2 {
 			is_ascending = report[0] < report[2]
 		}
@@ -46,8 +40,6 @@ func isSafe(report []int) bool {
 		} else {
 			difference = previous - current
 		}
-
-		fmt.Printf("%d %d        diff: %d\n", previous, current, difference)
 
 		if difference < 1 || difference > 3 {
 			// Unsafe reading
@@ -65,7 +57,15 @@ func isSafe(report []int) bool {
 }
 
 func main() {
-	file_bytes, err := os.ReadFile(INPUT_NAME)
+	args := os.Args
+
+	if len(args) != 2 {
+		panic("Usage: <program> <input_name>")
+	}
+
+	input_name := args[1]
+
+	file_bytes, err := os.ReadFile(input_name)
 
 	if err != nil {
 		panic(err)
@@ -109,7 +109,10 @@ func main() {
 		if is_safe {
 			safe_report_count++
 		}
-		fmt.Println(line, is_safe)
+
+		if !is_safe {
+			fmt.Println(line, is_safe)
+		}
 	}
 
 	fmt.Printf("Safe report count: %d\n", safe_report_count)
