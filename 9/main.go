@@ -27,7 +27,7 @@ func readFile(fileName string) string {
 
 func main() {
 	input := readFile("input.txt")
-	input = INPUT
+	// input = INPUT
 
 	next_id := 0
 
@@ -102,9 +102,6 @@ func main() {
 			continue
 		}
 
-		// TODO: A rogue '.' is being swapped into the start of the end result
-		// existing := strings.Clone(string(disk))
-
 		// Find the first free space and replace it with this file block
 		for inner := 0; inner < file_block_count; inner++ {
 			is_file := disk[inner] != '.'
@@ -114,15 +111,7 @@ func main() {
 				disk[inner] = disk[outer]
 				break
 			}
-
-			// Swap the two characters
-			// temp := disk[inner]
-			// disk[inner] = disk[outer]
-			// disk[outer] = temp
 		}
-
-		// fmt.Println(existing)
-		// fmt.Println(string(disk))
 	}
 
 	fmt.Println(len(disk), file_block_count)
@@ -130,25 +119,6 @@ func main() {
 	// Since all file blocks have replaced and early free spaces, simply cut off the now-redundant file blocks
 	disk = disk[0:file_block_count]
 	fmt.Println(len(disk))
-
-	// Forcefully rotate the array leftwards if the first element is a free space
-	// Assume that the last two spaces are free
-	// I am dumb
-	// is_start_free_space := disk[0] == '.'
-	//
-	// if is_start_free_space {
-	// 	for i := 1; i < length; i++ {
-	// 		previous := disk[i-1]
-	// 		current := disk[i]
-	//
-	// 		// Swap the elements
-	// 		disk[i] = previous
-	// 		disk[i-1] = current
-	// 	}
-	// }
-
-	// fmt.Println(string(disk))
-	// fmt.Println("0099811188827773336446555566")
 
 	// Calculate the checksum
 	checksum := 0
