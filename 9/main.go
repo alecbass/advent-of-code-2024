@@ -8,9 +8,12 @@ import (
 )
 
 type Block struct {
-	id      int
-	length  int
-	is_file bool
+	id     int
+	length int
+}
+
+func (block Block) is_free_space() bool {
+	return block.id == -1
 }
 
 const INPUT = "2333133121414131402"
@@ -25,17 +28,11 @@ func readFile(fileName string) string {
 	return strings.ReplaceAll(string(contents), "\n", "")
 }
 
-func main() {
-	input := readFile("input.txt")
-	// input = INPUT
-
+func parseBlocks(input string) []*Block {
 	next_id := 0
 
 	// All disk blocks
-	blocks := []Block{}
-
-	// How many blocks are files? Used to make the swapping search faster
-	file_block_count := 0
+	blocks := []*Block{}
 
 	for index, digit := range input {
 		length, err := strconv.Atoi(string(digit))
@@ -56,83 +53,97 @@ func main() {
 		}
 
 		// Record this disk block
-		block := Block{
-			id:      id,
-			length:  length,
-			is_file: is_file,
+		block := &Block{
+			id:     id,
+			length: length,
 		}
 
 		if is_file {
 			// Prepare the next ID
 			next_id += 1
-
-			// Increase how many file blocks we have stored
-			file_block_count += length
 		}
 
-		blocks = append(blocks, block)
+		for i := 0; i < length; i++ {
+			// Add a pointer to this individual space for each length of the block
+			blocks = append(blocks, block)
+		}
 
 	}
 
-	var builder strings.Builder
+	return blocks
+}
 
+func printDisk(blocks []*Block) {
 	for _, block := range blocks {
-		is_file := block.id != -1
-
-		if is_file {
-			for i := 0; i < block.length; i++ {
-				builder.WriteString(fmt.Sprintf("%d", block.id))
-			}
+		if block.is_free_space() {
+			fmt.Print(".")
 		} else {
-			for i := 0; i < block.length; i++ {
-				builder.WriteString(".")
-			}
+			fmt.Printf("%d", block.id)
 		}
 	}
 
-	// Move each element from the end to the first free space on the left
+	fmt.Printf("\n")
+}
 
-	disk := []rune(builder.String())
+func main() {
+	input := readFile("input.txt")
+	// input = INPUT
 
-	for outer := len(disk) - 1; outer >= 0; outer-- {
-		is_free_space := disk[outer] == '.'
+	blocks := parseBlocks(input)
+	length := len(blocks)
+
+	for outer := length - 1; outer >= 0; outer-- {
+		outer_block := blocks[outer]
+
+		is_free_space := outer_block.is_free_space()
 
 		if is_free_space {
 			// Don't swap free spaces
 			continue
 		}
 
-		// Find the first free space and replace it with this file block
-		for inner := 0; inner < file_block_count; inner++ {
-			is_file := disk[inner] != '.'
+		for inner := 0; inner < length; inner++ {
+			// Move each element from the end to the first free space on the left
+			inner_block := blocks[inner]
 
-			if !is_file {
-				// Space is free, copy this file block to earlier in the disk
-				disk[inner] = disk[outer]
+			if inner_block.is_free_space() {
+				// Swap this free space with a pointer to a real block
+				blocks[inner] = outer_block
+				blocks[outer] = inner_block
 				break
 			}
 		}
 	}
 
-	fmt.Println(len(disk), file_block_count)
+	// Rotate the array if it starts with a free space because I am dumb
+	for i := 1; i < length; i++ {
+		previous := blocks[i-1]
+		current := blocks[i]
 
-	// Since all file blocks have replaced and early free spaces, simply cut off the now-redundant file blocks
-	disk = disk[0:file_block_count]
-	fmt.Println(len(disk))
+		should_swap := previous.is_free_space() && !current.is_free_space()
+
+		if !should_swap {
+			// Can't swap any more
+			break
+		}
+
+		blocks[i] = previous
+		blocks[i-1] = current
+	}
 
 	// Calculate the checksum
 	checksum := 0
 
 	// Assume there are no free spaces, so expect every character to be a digit
-	for i := 0; i < len(disk); i++ {
-		value, err := strconv.Atoi(string(disk[i]))
-
-		if err != nil {
-			panic("Failed to parse character when calculating the checksum")
+	for index, block := range blocks {
+		if block.is_free_space() {
+			// We've reached free spaces, stop increasing checksum
+			break
 		}
 
-		checksum += value * i
+		checksum += block.id * index
 	}
 
+	printDisk(blocks)
 	fmt.Printf("Checksum: %d\n", checksum)
 }
